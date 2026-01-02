@@ -2,14 +2,14 @@ import pandas as pd
 
 def merge_bbh_daily(bbh_file, daily_file):
 
-    # ---------------- READ FILES ----------------
+    # -------- READ FILES --------
     bbh = pd.read_excel(bbh_file)
     daily = pd.read_excel(daily_file)
 
     bbh.columns = bbh.columns.str.strip()
     daily.columns = daily.columns.str.strip()
 
-    # ---------------- TIME HANDLING ----------------
+    # -------- TIME HANDLING --------
     bbh["Period start time"] = pd.to_datetime(bbh["Period start time"])
     bbh["Date"] = bbh["Period start time"].dt.date
     bbh["Hour"] = bbh["Period start time"].dt.hour
@@ -17,7 +17,7 @@ def merge_bbh_daily(bbh_file, daily_file):
     daily["Period start time"] = pd.to_datetime(daily["Period start time"])
     daily["Date"] = daily["Period start time"].dt.date
 
-    # ---------------- CLEAN NUMERIC KPIs ----------------
+    # -------- CLEAN NUMERIC KPIs --------
     id_cols = [
         "Period start time", "Date", "Hour",
         "MRBTS name", "LNBTS name", "LNCEL name"
@@ -33,37 +33,9 @@ def merge_bbh_daily(bbh_file, daily_file):
         )
         bbh[col] = pd.to_numeric(bbh[col], errors="coerce")
 
-    # ---------------- SPLIT KPI TYPES ----------------
-    sum_keywords = [
-        "traffic", "volume", "pdu", "payload"
-    ]
-
-    sum_cols = [
-        c for c in kpi_cols
-        if any(k in c.lower() for k in sum_keywords)
-    ]
-
-    mean_cols = list(set(kpi_cols) - set(sum_cols))
-
-    # ---------------- HOURLY → DAILY ----------------
-    grp = bbh.groupby(
-        ["Date", "LNBTS name", "LNCEL name"],
-        as_index=False
-    )
-
-    bbh_sum = grp[sum_cols].sum(numeric_only=True)
-    bbh_mean = grp[mean_cols].mean(numeric_only=True)
-
-    bbh_daily = pd.merge(
-        bbh_sum,
-        bbh_mean,
-        on=["Date", "LNBTS name", "LNCEL name"],
-        how="outer"
-    )
-
-    # ---------------- MERGE DAILY FILE ----------------
+    # -------- MERGE DAILY FILE --------
     merged = pd.merge(
-        bbh_daily,
+        bbh,
         daily[
             [
                 "Date",
@@ -78,7 +50,7 @@ def merge_bbh_daily(bbh_file, daily_file):
         suffixes=("_BBH", "_DAILY")
     )
 
-    # ---------------- FINAL KPI DERIVATION ----------------
+    # -------- FINAL KPI DERIVATION --------
     merged["Total LTE Payload (Combined)"] = (
         merged["Total LTE data volume, DL + UL_BBH"].fillna(0)
         + merged["Total LTE data volume, DL + UL_DAILY"].fillna(0)
