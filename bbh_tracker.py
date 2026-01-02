@@ -16,7 +16,7 @@ BBH_KPIS = [
     "Avg IP thp DL QCI9",
     "Avg UE distance",
     "Average CQI",
-    "Avg RRC conn UE2",
+    "Avg RRC conn UE",
     "inter eNB E-UTRAN HO SR X2",
     "Intra eNB HO SR",
     "E-RAB DR RAN",
@@ -27,7 +27,7 @@ BBH_KPIS = [
     "Avg IP thp DL QCI7",
     "Avg DL User throughput",
     "Avg UL User throughput",
-    "Total LTE Payload (Combined)",
+    "Total LTE Payload (24)",
     "VoLTE total traffic"
 ]
 
@@ -64,3 +64,4 @@ def build_bbh_tracker(bbh_file, daily_file, lnbts, existing=None):
         return pd.concat([existing, new_data], ignore_index=True)
 
     return new_data
+
