@@ -23,7 +23,7 @@ def build_acceptance(bbh_file, daily_file, lnbts_list):
     # ---------- KPI LIST ----------
     kpi_list = [
         "Average CQI",
-        "Avg RRC conn UE2",
+        "Avg RRC conn UE",
         "Avg UE distance",
         "Cell Avail excl BLU",
         "E-RAB DR RAN",
@@ -75,4 +75,5 @@ def build_acceptance(bbh_file, daily_file, lnbts_list):
         acceptance_df.columns.name = None
 
     return acceptance_df
+
 
