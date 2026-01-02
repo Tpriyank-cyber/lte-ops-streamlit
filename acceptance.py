@@ -1,48 +1,70 @@
 import pandas as pd
 from data_merge import merge_bbh_daily
 
-ACCEPTANCE_KPIS = {
-    "Cell Avail excl BLU": "Cell Avail excl BLU",
-    "E-UTRAN Avg PRB usage per TTI DL": "E-UTRAN Avg PRB usage per TTI DL",
-    "Average CQI": "Average CQI",
-    "Avg UE distance": "Avg UE distance",
-    "Avg RRC conn UE2": "Avg RRC conn UE",
-    "E-RAB DR RAN": "E-RAB DR RAN",
-    "E-UTRAN E-RAB stp SR": "E-UTRAN E-RAB stp SR",
-    "Init Contx stp SR for CSFB": "Init Contx stp SR for CSFB",
-    "Intra eNB HO SR": "Intra eNB HO SR",
-    "Avg IP thp DL QCI9": "Non-GBR DL Thrpt",
+# ---------- BUILD ACCEPTANCE SHEET ----------
+def build_acceptance(bbh_file, daily_file, lnbts_list):
+    """
+    Build LTE Acceptance Sheet per LNBTS and LNCEL.
 
-    # 🔥 Special handling
-    "Total LTE Payload (Combined)": "Total LTE Payload (Combined)",
-    "VoLTE total traffic": "VoLTE total traffic"
-}
+    Args:
+        bbh_file (str): Path to BBH raw file
+        daily_file (str): Path to Daily LTE file
+        lnbts_list (list): List of LNBTS names to include
 
-def build_acceptance(bbh_file, daily_file, lnbts):
+    Returns:
+        pd.DataFrame: Acceptance sheet
+    """
+
+    # Merge BBH + Daily (cell-level)
     df = merge_bbh_daily(bbh_file, daily_file)
-    df["Date"] = pd.to_datetime(df["Date"]).dt.strftime("%d-%b")
 
-    if lnbts != "ALL":
-        df = df[df["LNBTS name"] == lnbts]
+    # Filter by selected LNBTS
+    df = df[df["LNBTS name"].isin(lnbts_list)]
 
-    final = []
+    # ---------- KPI LIST ----------
+    kpi_list = [
+        "Average CQI",
+        "Avg RRC conn UE2",
+        "Avg UE distance",
+        "Cell Avail excl BLU",
+        "E-RAB DR RAN",
+        "E-UTRAN Avg PRB usage per TTI DL",
+        "E-UTRAN E-RAB stp SR",
+        "Init Contx stp SR for CSFB",
+        "Intra eNB HO SR",
+        "Non-GBR DL Thrpt",
+        "Total E-UTRAN RRC conn stp SR",
+        "Total LTE data volume, DL + UL",
+        "Total LTE Traffic (24 Hr)",
+        "VoLTE total traffic"
+    ]
 
-    for kpi, col in ACCEPTANCE_KPIS.items():
-        if col not in df.columns:
-            continue
+    # ---------- PIVOT TO ACCEPTANCE FORMAT ----------
+    acceptance_rows = []
 
-        temp = df[
-            ["LNBTS name", "LNCEL name", "Date", col]
-        ].rename(columns={col: "Value"})
+    for _, row in df.iterrows():
+        for kpi in kpi_list:
+            if kpi not in row:
+                continue  # skip missing KPIs
+            acceptance_rows.append({
+                "LNBTS name": row["LNBTS name"],
+                "LNCEL name": row["LNCEL name"],
+                "KPI NAME": kpi,
+                str(row["Date"]): row[kpi]  # date as column
+            })
 
-        pivot = temp.pivot_table(
-            index=["LNBTS name", "LNCEL name"],
-            columns="Date",
-            values="Value",
-            aggfunc="mean"
+    acceptance_df = pd.DataFrame(acceptance_rows)
+
+    # ---------- COMBINE SAME KPI ROWS (MULTI-DATE) ----------
+    if not acceptance_df.empty:
+        acceptance_df = acceptance_df.pivot_table(
+            index=["LNBTS name", "LNCEL name", "KPI NAME"],
+            columns=acceptance_df.columns[-1],  # the date column
+            values=acceptance_df.columns[-2],  # the KPI value
+            aggfunc="first"  # should be single value
         ).reset_index()
 
-        pivot.insert(2, "KPI NAME", kpi)
-        final.append(pivot)
+        # Rename columns properly
+        acceptance_df.columns.name = None
 
-    return pd.concat(final, ignore_index=True)
+    return acceptance_df
