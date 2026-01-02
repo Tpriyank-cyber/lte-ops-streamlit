@@ -17,19 +17,14 @@ def merge_bbh_daily(bbh_file, daily_file):
     daily["Period start time"] = pd.to_datetime(daily["Period start time"])
     daily["Date"] = daily["Period start time"].dt.date
 
-    # ---------------- IDENTIFY NUMERIC KPI COLUMNS ----------------
-    key_cols = [
-        "Period start time",
-        "Date",
-        "Hour",
-        "MRBTS name",
-        "LNBTS name",
-        "LNCEL name"
+    # ---------------- CLEAN NUMERIC KPIs ----------------
+    id_cols = [
+        "Period start time", "Date", "Hour",
+        "MRBTS name", "LNBTS name", "LNCEL name"
     ]
 
-    kpi_cols = [c for c in bbh.columns if c not in key_cols]
+    kpi_cols = [c for c in bbh.columns if c not in id_cols]
 
-    # Convert KPI columns to numeric safely
     for col in kpi_cols:
         bbh[col] = (
             bbh[col]
@@ -38,30 +33,35 @@ def merge_bbh_daily(bbh_file, daily_file):
         )
         bbh[col] = pd.to_numeric(bbh[col], errors="coerce")
 
-    # ---------------- BUILD AGG MAP ----------------
+    # ---------------- SPLIT KPI TYPES ----------------
     sum_keywords = [
-        "Traffic",
-        "volume",
-        "PDU",
-        "Payload",
-        "Volume"
+        "traffic", "volume", "pdu", "payload"
     ]
 
-    agg_map = {}
-    for col in kpi_cols:
-        if any(k.lower() in col.lower() for k in sum_keywords):
-            agg_map[col] = "sum"
-        else:
-            agg_map[col] = "mean"
+    sum_cols = [
+        c for c in kpi_cols
+        if any(k in c.lower() for k in sum_keywords)
+    ]
 
-    # ---------------- HOURLY → DAILY AGGREGATION ----------------
-    bbh_daily = (
-        bbh
-        .groupby(["Date", "LNBTS name", "LNCEL name"], as_index=False)
-        .agg(agg_map)
+    mean_cols = list(set(kpi_cols) - set(sum_cols))
+
+    # ---------------- HOURLY → DAILY ----------------
+    grp = bbh.groupby(
+        ["Date", "LNBTS name", "LNCEL name"],
+        as_index=False
     )
 
-    # ---------------- MERGE WITH DAILY FILE ----------------
+    bbh_sum = grp[sum_cols].sum(numeric_only=True)
+    bbh_mean = grp[mean_cols].mean(numeric_only=True)
+
+    bbh_daily = pd.merge(
+        bbh_sum,
+        bbh_mean,
+        on=["Date", "LNBTS name", "LNCEL name"],
+        how="outer"
+    )
+
+    # ---------------- MERGE DAILY FILE ----------------
     merged = pd.merge(
         bbh_daily,
         daily[
