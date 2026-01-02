@@ -33,6 +33,9 @@ def merge_bbh_daily(bbh_file, daily_file):
         )
         bbh[col] = pd.to_numeric(bbh[col], errors="coerce")
 
+    # -------- RENAME DAILY PAYLOAD --------
+    daily = daily.rename(columns={"Total LTE data volume, DL + UL": "Total LTE Payload (24)"})
+
     # -------- MERGE DAILY FILE --------
     merged = pd.merge(
         bbh,
@@ -41,19 +44,13 @@ def merge_bbh_daily(bbh_file, daily_file):
                 "Date",
                 "LNBTS name",
                 "LNCEL name",
-                "Total LTE data volume, DL + UL",
+                "Total LTE Payload (Combined)",
                 "VoLTE total traffic"
             ]
         ],
         on=["Date", "LNBTS name", "LNCEL name"],
         how="left",
         suffixes=("_BBH", "_DAILY")
-    )
-
-    # -------- FINAL KPI DERIVATION --------
-    merged["Total LTE Payload (Combined)"] = (
-        merged["Total LTE data volume, DL + UL_BBH"].fillna(0)
-        + merged["Total LTE data volume, DL + UL_DAILY"].fillna(0)
     )
 
     return merged
