@@ -23,7 +23,7 @@ def build_acceptance(bbh_file, daily_file, lnbts_list):
         "E-UTRAN E-RAB stp SR",
         "Init Contx stp SR for CSFB",
         "Intra eNB HO SR",
-        "Non-GBR DL Thrpt",
+        "Avg IP thp DL QCI9",
         "Total E-UTRAN RRC conn stp SR",
         "Total LTE data volume, DL + UL",
         "Total LTE Traffic (24 Hr)",
@@ -58,3 +58,4 @@ def build_acceptance(bbh_file, daily_file, lnbts_list):
         acceptance_df.columns.name = None
 
     return acceptance_df
+
