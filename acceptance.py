@@ -46,7 +46,7 @@ def build_acceptance(bbh_file, daily_file, lnbts_list):
                 continue
             # Special handling
             if kpi == "Total LTE Traffic (24 Hr)":
-                value = row["Total LTE Payload (Combined)"]  # BBH + Daily
+                value = row["Total LTE Payload (24)"]  # BBH + Daily
             elif kpi == "VoLTE total traffic":
                 value = row["VoLTE total traffic"]  # Daily only
             else:
@@ -75,3 +75,4 @@ def build_acceptance(bbh_file, daily_file, lnbts_list):
         acceptance_df.columns.name = None
 
     return acceptance_df
+
