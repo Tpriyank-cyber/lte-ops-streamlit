@@ -34,25 +34,15 @@ def merge_bbh_daily(bbh_file, daily_file):
         bbh[col] = pd.to_numeric(bbh[col], errors="coerce")
 
     # -------- RENAME DAILY PAYLOAD --------
-    daily = daily.rename(columns={"Total LTE data volume, DL + UL": "Total LTE Payload (24)"})
+    daily = daily.rename(columns={"Total LTE data volume, DL + UL": "Total LTE Traffic (24 Hr)"})
 
-    # -------- MERGE DAILY FILE --------
+    # -------- MERGE DAILY FILE (KEEP BBH CELLS AND DAILY PAYLOAD) --------
     merged = pd.merge(
         bbh,
-        daily[
-            [
-                "Date",
-                "LNBTS name",
-                "LNCEL name",
-                "Total LTE Payload (24)",
-                "VoLTE total traffic"
-            ]
-        ],
+        daily[["Date", "LNBTS name", "LNCEL name", "Total LTE Traffic (24 Hr)", "VoLTE total traffic"]],
         on=["Date", "LNBTS name", "LNCEL name"],
         how="left",
         suffixes=("_BBH", "_DAILY")
     )
 
     return merged
-
-
