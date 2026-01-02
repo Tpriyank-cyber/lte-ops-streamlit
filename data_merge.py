@@ -1,4 +1,4 @@
-import pandas as pd
+2import pandas as pd
 
 def merge_bbh_daily(bbh_file, daily_file):
 
@@ -44,7 +44,7 @@ def merge_bbh_daily(bbh_file, daily_file):
                 "Date",
                 "LNBTS name",
                 "LNCEL name",
-                "Total LTE Payload (Combined)",
+                "Total LTE Payload (24)",
                 "VoLTE total traffic"
             ]
         ],
@@ -54,3 +54,4 @@ def merge_bbh_daily(bbh_file, daily_file):
     )
 
     return merged
+
